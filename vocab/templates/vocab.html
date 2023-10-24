@@ -73,31 +73,60 @@
          <br />
          <div class="row">
             <div class="col-xs-6 text-center">
-               <form id="entry" method="POST" action="/_check">
+               <form id="entry">
                   <label for="attempt">Word:</label>
                   <input id="attempt" name="attempt" type="text" width="15"
                      autocomplete="off"  autofocus />
-                  <input type="submit" name="try" />
                </form>
             </div>
          </div>
-         <br />
-         {% if session.matches|length is not equalto 0  %}
-         <h2>You found </h2>
-         <p id="results">
-            {% for match in session.matches %}
-            {{ match }}
-            {% endfor %}
-         </p>
-         {% endif %}
-         {% with messages = get_flashed_messages() %}
-         {% if messages %}
-         <!-- Mismatch, already found, etc. "flashed" from Python -->
-         {% for message in messages %}
-         <p class="message">{{ message }}</p>
-         {% endfor %}
-         {% endif %}
-         {% endwith %}
+         <p id="results"> </p>
+         <p id="message"> </p>
+         <script>
+            $("#entry").submit( function(event) {
+               event.preventDefault();
+            });
+
+            $("#attempt").keyup(function(event) {
+             // Ignore non-keystrokes
+             var keycode = event.which;
+             var letter = String.fromCharCode(keycode);
+             if (! "ABCDEFGHIJKLMNOPQRSTUVWXYZ".includes(letter)) { return }
+
+              // Current content of the input field
+              var txt = $("#attempt").val();
+              console.log("txt: " + txt)
+
+              // JQuery request
+              $.getJSON( "/_check", { text: txt },
+                function(data) {
+                  rsval = data.result.code;
+                  console.log("rsval: " + rsval)
+                  switch (rsval) {
+                    case 0:
+                      $("#message").html("");
+                      break;
+                    case 1:
+                      $("#results").html($('#results').text() + " " + txt);
+                      $("#message").html("Match obtained: " + txt);
+                      break;
+                    case 2:
+                      $("#message").html("You already found " + txt);
+                      break;
+                    case 3:
+                      $("#message").html(txt + " is not in the list of words");
+                      break;
+                    case 4:
+                      $("#message").html(txt + " can't be made from given letters");
+                      break;
+                    case 5:
+                      window.location.replace("/success");
+                      break;
+                  }
+                }
+              );
+            });
+         </script>
       </div>
       <!-- container -->
    </body>
